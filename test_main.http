@@ -1,0 +1,55 @@
+# Test your FastAPI endpoints
+
+GET http://127.0.0.1:8000/
+Accept: application/json
+
+###
+GET http://127.0.0.1:8000/hello/User
+Accept: application/json
+
+### Criar evento
+POST http://127.0.0.1:8000/events/new
+Content-Type: application/json
+
+{
+  "id": 2,
+  "title": "FastAPI Meetup 2025",
+  "date": "2026-08-20",
+  "organizer": "Matheus",
+  "image": "https://example.com/image.png",
+  "description": "Evento sobre FastAPI",
+  "tags": ["python", "fastapi"],
+  "location": "Online"
+}
+
+### Listar eventos
+GET http://127.0.0.1:8000/events/
+Accept: application/json
+
+### Buscar evento por ID
+GET http://127.0.0.1:8000/events/1
+Accept: application/json
+
+### Atualizar evento
+PUT http://127.0.0.1:8000/events/1
+Content-Type: application/json
+
+{
+  "id": 1,
+  "title": "FastAPI Meetup 2025",
+  "image": "https://example.com/image.png",
+  "description": "Evento atualizado",
+  "tags": ["python", "fastapi", "2025"],
+  "location": "Online"
+}
+
+### Deletar evento
+DELETE http://127.0.0.1:8000/events/1
+
+### Testar Rota Segura (Com filtro Pydantic)
+POST http://127.0.0.1:8000/events/new-secure
+Accept: application/json
+
+### Testar Rota Vulnerável (Sem filtro Pydantic - Vaza dados)
+POST http://127.0.0.1:8000/events/new-vulneravel
+Accept: application/json

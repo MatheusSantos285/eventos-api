@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Eventos{% endblock %}</title>
+</head>
+<body>
+    <header style="background-color: #f4f4f4; padding: 10px; border-bottom: 1px solid #ccc;">
+        <h2>Eventos API - Painel Interno</h2>
+        <nav>
+            <a href="/events/html/view">Lista de Eventos</a>
+        </nav>
+    </header>
+
+    <main style="padding: 20px;">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer style="background-color: #f4f4f4; padding: 10px; border-top: 1px solid #ccc; margin-top: 20px;">
+        <p>&copy; 2026 Time de Operações - Eventos API</p>
+    </footer>
+</body>
+</html>

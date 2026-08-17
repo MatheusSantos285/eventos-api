@@ -1,0 +1,49 @@
+<!-- ### Exercício 5 - Utilize o motor de templates para exibir dinamicamente pelo menos três campos de cada evento (nome, data, organizador).
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Eventos Interna</title>
+</head>
+<body>
+    <h1>Eventos Cadastrados (Visão Interna)</h1>
+
+    <ul>
+        {% for event in events %}
+            <li>
+                <strong>Nome:</strong> {{ event.title }} <br>
+                <strong>Data:</strong> {{ event.date }} <br>
+                <strong>Organizador:</strong> {{ event.organizer }}
+            </li>
+            <br>
+        {% else %}
+            <p>Nenhum evento cadastrado no momento.</p>
+        {% endfor %}
+    </ul>
+</body>
+</html>
+-->
+
+<!-- Exercício 6 - Implemente herança de templates com um template base contendo cabeçalho e rodapé, e faça a página de listagem e a página de detalhes de evento herdarem dele. -->
+
+{% extends "base.html" %}
+
+{% block title %}Lista de Eventos{% endblock %}
+
+{% block content %}
+    <h1>Eventos Cadastrados</h1>
+    <ul>
+        {% for event in events %}
+            <li>
+                <strong>Nome:</strong> {{ event.title }} <br>
+                <strong>Data:</strong> {{ event.date }} <br>
+                <strong>Organizador:</strong> {{ event.organizer }} <br>
+                <a href="/events/html/view/{{ event.id }}">Ver Detalhes</a>
+            </li>
+            <br>
+        {% else %}
+            <p>Nenhum evento cadastrado no momento.</p>
+        {% endfor %}
+    </ul>
+{% endblock %}
