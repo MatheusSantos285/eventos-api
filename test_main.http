@@ -113,3 +113,23 @@ Authorization: Bearer {{token_invasor}}
   "title": "FastAPI Sec Meetup - Hacked",
   "description": "Tentativa de edição maliciosa"
 }
+
+### Teste de Segurança - TP2 - Ex7
+
+### 1. Login do Administrador (Solicitará MFA)
+POST http://127.0.0.1:8000/user/login
+Content-Type: application/x-www-form-urlencoded
+
+username=admin@empresa.com&password=admin_pass123
+
+### 2. Validação do MFA do Administrador (Retorna o Token Final)
+POST http://127.0.0.1:8000/user/login/mfa-verify?username=admin@empresa.com&mfa_code=123456
+Content-Type: application/json
+
+> {%
+    client.global.set("token_admin", response.body.access_token);
+%}
+
+### 3. Teste de Rota Exclusiva de Admin (Com o Token obtido no passo 2)
+GET http://127.0.0.1:8000/admin/dashboard
+Authorization: Bearer {{token_admin}}

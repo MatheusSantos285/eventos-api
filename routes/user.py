@@ -27,10 +27,49 @@ async def sign_user_in(user: OAuth2PasswordRequestForm = Depends()) -> dict:
             detail="Credenciais inválidas"
         )
 
+    if user_exist["role"] == "admin":
+        return {
+            "mfa_required": True,
+            "message": "Usuário admin requer autenticação multifator (MFA). Por favor, forneça o código MFA.",
+            "username": user_exist["email"]
+        }
+
     # Cria o JWT utilizando apenas o ID do usuário ("sub"), conforme exigido pela sua função jwt_handler.py
-    access_token = create_access_token(user_exist["id"])
+    access_token = create_access_token(user_id = user_exist["id"], role = user_exist["role"])
 
     return {
         "access_token": access_token,
         "token_type": "bearer"
+    }
+
+@user_router.post("/login/mfa-verify")
+async def verify_mfa(username: str, mfa_code: str) -> dict:
+    """Validação do segundo fator de autenticação (MFA) para o papel de administrador."""
+    user_exist = users_db.get(username)
+
+    if not user_exist:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado"
+        )
+
+    if user_exist["role"] != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuário não elegível para MFA."
+        )
+
+    if user_exist["mfa_secret"] != mfa_code:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Código MFA inválido."
+        )
+
+    # Se o código MFA estiver correto, cria o JWT com a flag mfa_verified = True
+    access_token = create_access_token(user_id=user_exist["id"], role=user_exist["role"], mfa_verified=True)
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "message": "Autenticação multifator (MFA) bem-sucedida."
     }
