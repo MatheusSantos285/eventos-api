@@ -1,4 +1,4 @@
-# Test your FastAPI endpoints
+# Testes TP1
 
 GET http://127.0.0.1:8000/
 Accept: application/json
@@ -53,3 +53,63 @@ Accept: application/json
 ### Testar Rota Vulnerável (Sem filtro Pydantic - Vaza dados)
 POST http://127.0.0.1:8000/events/new-vulneravel
 Accept: application/json
+
+# Testes de Segurança BOLA - TP2
+
+### 1. Login do Usuário A (Dono) e captura do Token
+# @name loginDono
+POST http://127.0.0.1:8000/user/login
+Content-Type: application/x-www-form-urlencoded
+
+username=organizador_a@empresa.com&password=senha_segura_a
+
+> {%
+    client.global.set("token_dono", response.body.access_token);
+%}
+
+### 2. Login do Usuário B (Invasor) e captura do Token
+# @name loginInvasor
+POST http://127.0.0.1:8000/user/login
+Content-Type: application/x-www-form-urlencoded
+
+username=organizador_b@empresa.com&password=senha_segura_b
+
+> {%
+    client.global.set("token_invasor", response.body.access_token);
+%}
+
+### 3. Usuário A cria o Evento ID 10
+POST http://127.0.0.1:8000/events/new
+Content-Type: application/json
+Authorization: Bearer {{token_dono}}
+
+{
+  "id": 10,
+  "title": "FastAPI Sec Meetup",
+  "date": "2026-10-10",
+  "organizer": "organizador_a@empresa.com",
+  "image": "https://example.com/sec.png",
+  "description": "Evento original criado pelo Usuário A",
+  "tags": ["segurança", "fastapi"],
+  "location": "Online"
+}
+
+### 4. CENÁRIO DE SUCESSO: Usuário A (Dono) edita o evento (Deve retornar 200 OK)
+PUT http://127.0.0.1:8000/events/10
+Content-Type: application/json
+Authorization: Bearer {{token_dono}}
+
+{
+  "title": "FastAPI Sec Meetup - Atualizado",
+  "description": "Edição autorizada pelo dono do evento"
+}
+
+### 5. CENÁRIO DE FALHA (DEFESA BOLA): Usuário B (Invasor) tenta editar o evento (Deve retornar 403 Forbidden)
+PUT http://127.0.0.1:8000/events/10
+Content-Type: application/json
+Authorization: Bearer {{token_invasor}}
+
+{
+  "title": "FastAPI Sec Meetup - Hacked",
+  "description": "Tentativa de edição maliciosa"
+}

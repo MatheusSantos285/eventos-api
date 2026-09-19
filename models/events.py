@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 
 class Event(BaseModel):
@@ -29,7 +29,14 @@ class EventInternal(BaseModel):
     organizer_id: int
     audit_token: str
 
-# 2. O que o cliente pode ver (O filtro)
+# 2. O que o cliente pode ver (Exclui dados sensíveis)
 class EventPublicResponse(BaseModel):
     title: str
     description: str
+
+class EventUpdateSchema(BaseModel):
+    title: Optional[str] = None
+    image: Optional[str] = None
+    description: Optional[str] = None
+    tags: Optional[List[str]] = None
+    location: Optional[str] = None

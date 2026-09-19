@@ -1,18 +1,19 @@
 import uuid
 from typing import List
 
-from fastapi import APIRouter, Body, HTTPException, status, Request
+from fastapi import APIRouter, Body, HTTPException, status, Request, Depends
 from fastapi.templating import Jinja2Templates
-from models.events import Event, EventPublicResponse, EventInternal
-from database.database import events_db
+from models.events import Event, EventPublicResponse, EventInternal, EventUpdateSchema
+from auth.authenticate import get_current_user
+from database.events import events_db
 
 event_router = APIRouter(
+    prefix="/events",
     tags=["Events"]
 )
-# Aponta para a pasta que criamos no Passo 3
+
 templates = Jinja2Templates(directory="templates")
 
-# --- Demonstração do Exercício 2 ---
 @event_router.get("/", response_model=List[Event])
 async def retrieve_all_events() -> List[Event]:
     return list(events_db.values())
@@ -27,84 +28,79 @@ async def retrieve_event(id: int) -> Event:
         )
     return event
 
-@event_router.post("/new")
-async def create_event(body: Event = Body(...)) -> dict:
+@event_router.post("/new", response_model=EventPublicResponse)
+async def create_event(body: Event = Body(...), current_user_id: str = Depends(get_current_user)) -> dict:
     if body.id in events_db:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Event with supplied ID already exists"
         )
-    events_db[body.id] = body
-    return {
-        "message": "Event created successfully",
-        "event": body
-    }
 
-@event_router.put("/{id}")
-async def update_event(id: int, event_update: Event) -> dict:
-    if id not in events_db:
+    # Força que o organizador do evento seja o usuário autenticado que está criando
+    body.organizer = current_user_id
+
+    events_db[body.id] = body
+
+    return body
+
+@event_router.put("/{event_id}", response_model=EventPublicResponse)
+async def update_event(event_id: int, payload: EventUpdateSchema, current_user_id: str = Depends(get_current_user)) -> dict:
+    """
+    Rota protegida de edição de eventos.
+    Previne ataques BOLA validando se o usuário autenticado é o dono do registro.
+    """
+    # 1. Recupera o evento solicitado na base de dados
+    event = events_db.get(event_id)
+    if not event:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Event with supplied ID does not exist"
+            detail=f"Evento com ID {event_id} não encontrado."
         )
-    events_db[id] = event_update
-    return {
-        "message": "Event updated successfully",
-        "event": event_update
-    }
+
+    # 2. VALIDAÇÃO DE OWNERSHIP (Defesa contra BOLA)
+    if str(event.organizer) != str(current_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso Negado: Apenas o organizador dono do evento pode editá-lo."
+        )
+
+    # 3. Atualização segura do recurso iterando sobre os dados fornecidos
+    update_data = payload.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(event, key, value)
+
+    return event
+
 @event_router.delete("/{id}")
-async def delete_event(id: int) -> dict:
-    if id not in events_db:
+async def delete_event(id: int, current_user_id: str = Depends(get_current_user)) -> dict:
+    event = events_db.get(id)
+    if not event:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Event with supplied ID does not exist"
         )
+    # VALIDAÇÃO DE OWNERSHIP (Defesa contra BOLA)
+    if str(event.organizer) != str(current_user_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso Negado: Apenas o organizador dono do evento pode deletá-lo."
+        )
+
     deleted_event = events_db.pop(id)
     return {
         "message": "Event deleted successfully",
-        "deleted_event": deleted_event
+        "event": deleted_event
     }
 
-# --- Demonstração do Exercício 3 ---
-
-# 1. Rota Segura (Com filtro Pydantic)
-@event_router.post("/new-secure", response_model=EventPublicResponse)
-async def create_event_secure():
-    evento_salvo_no_banco = EventInternal(
-        title="Meetup AppSec",
-        description="Evento sobre segurança",
-        organizer_id=404,
-        audit_token=str(uuid.uuid4())
-    )
-    return evento_salvo_no_banco
-
-# 2. Rota Vulnerável (Sem filtro Pydantic)
-@event_router.post("/new-vulneravel")
-async def create_event_vulnerable():
-    evento_salvo_no_banco = EventInternal(
-        title="Meetup Hacker",
-        description="Evento vulnerável",
-        organizer_id=404,
-        audit_token=str(uuid.uuid4())
-    )
-    # Sem o response_model, o FastAPI serializa e devolve o objeto inteiro
-    return evento_salvo_no_banco
-
-# --- Demonstração do Exercício 4 ---
-# Nova rota para renderizar a página HTML
 @event_router.get("/html/view")
 async def render_events_html(request: Request):
-    # Converte o dicionário de eventos em uma lista para facilitar a iteração no template
     events_list = list(events_db.values())
-
-    # O TemplateResponse precisa do "request" e dos dados ("events") para injetar no HTML
     return templates.TemplateResponse(
         request=request,
         name="event_list.html",
         context={"events": events_list}
     )
 
-# --- Demonstração do Exercício 6 ---
 @event_router.get("/html/view/{id}")
 async def render_event_detail_html(request: Request, id: int):
     event = events_db.get(id)
