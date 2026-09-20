@@ -315,3 +315,49 @@ Content-Type: application/json
 # comprovando que o navegador executará o código ao processar a página.
 GET http://127.0.0.1:8000/events/html/view/99
 Accept: text/html
+
+### ==========================================================
+### Testes TP3 - Exercício 5 (PASSO 3: Comprovação da Correção XSS)
+### ==========================================================
+
+# @name loginM2M
+POST http://127.0.0.1:8000/user/login
+Content-Type: application/x-www-form-urlencoded
+
+username=parceiro_m2m@empresa.com&password=senha_m2m&scope=events:write
+
+> {%
+    client.global.set("token_m2m", response.body.access_token);
+%}
+
+### 2. Criar um novo evento (com escopo de escrita)
+POST http://127.0.0.1:8000/events/new
+Content-Type: application/json
+Authorization: Bearer {{token_m2m}}
+
+{
+  "id": 99,
+  "title": "FastAPI XSS Meetup",
+  "date": "2026-12-01",
+  "organizer": "Organizador_A",
+  "image": "https://example.com/image.png",
+  "description": "Evento para testes de segurança (XSS).",
+  "tags": ["segurança", "xss"],
+  "location": "Rio de Janeiro"
+}
+
+### 2. Atacante injeta o payload (o backend salva normalmente)
+POST http://127.0.0.1:8000/events/99/comments
+Content-Type: application/json
+
+{
+  "text": "<script>alert('XSS-Stored-Exploit')</script>"
+}
+
+### 3. Vítima acessa a página - COMPROVAÇÃO DE SEGURANÇA
+# No retorno HTTP, você verá que as tags <script> foram convertidas para &lt;script&gt;
+GET http://127.0.0.1:8000/events/html/view/99
+Accept: text/html
+
+# RESULTADO ESPERADO NO CORPO DA RESPOSTA:
+# <li>&lt;script&gt;alert(&#39;XSS-Stored-Exploit&#39;)&lt;/script&gt;</li>

@@ -21,8 +21,8 @@
     <h3>Comentários dos Participantes:</h3>
     <ul>
         {% for comment in event.comments %}
-            <!-- VULNERABILIDADE: O filtro | safe renderiza tags HTML/JS diretamente no DOM -->
-            <li>{{ comment | safe }}</li>
+            <!-- CORREÇÃO: Removido o filtro | safe. O Jinja2 fará o Auto-Escaping (Output Encoding) -->
+            <li>{{ comment }}</li>
         {% else %}
             <p>Nenhum comentário cadastrado.</p>
         {% endfor %}
