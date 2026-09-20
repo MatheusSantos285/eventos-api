@@ -1,4 +1,5 @@
 import uuid
+import re
 from typing import List
 from fastapi import APIRouter, Body, HTTPException, status, Request, Depends, Security
 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
@@ -39,6 +40,61 @@ async def verify_scopes(security_scopes: SecurityScopes, token: str = Depends(oa
                 detail=f"Permissão insuficiente. Escopo '{scope}' é necessário para esta operação (Violação de Contrato)."
             )
     return payload  # Retorna o payload para extrairmos o 'sub' depois
+
+# =========================================================================
+# EXERCÍCIO 1 - TP3: Rota de Busca (Vulnerável vs Segura)
+# =========================================================================
+
+@event_router.get("/search-vulnerable")
+async def search_events_vulnerable(name: str):
+    """
+    SIMULAÇÃO DE VULNERABILIDADE.
+    Demonstra a falha estrutural de concatenar parâmetros diretamente na query.
+    """
+    # Concatenação direta permitindo injeção de SQL ou quebra de sintaxe
+    query_simulada = f"SELECT * FROM events WHERE name = '{name}'"
+
+    return {
+        "warning": "Esta rota é propositalmente vulnerável a SQL Injection.",
+        "query_executada": query_simulada,
+        "payload_recebido": name
+    }
+
+def validate_search_query(name: str) -> str:
+    """
+    Dependency Injection para validação de Input via Allow-List.
+    Permite apenas letras, números e espaços, bloqueando caracteres especiais.
+    """
+    if not re.match(r"^[a-zA-Z0-9\s]+$", name):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Parâmetro de busca inválido. Apenas caracteres alfanuméricos e espaços são permitidos (Security Gate Block)."
+        )
+    return name
+
+
+@event_router.get("/search")
+async def search_events_secure(name: str = Depends(validate_search_query)):
+    """
+    ROTA SEGURA: O parâmetro 'name' passou pelo Security Gate (validate_search_query)
+    que aplica o padrão Allow-List (Regex), evitando qualquer injeção maliciosa.
+    """
+    # Na prática, a query real no banco seria construída com parametrização (ORM/Driver):
+    # ex: cursor.execute("SELECT * FROM events WHERE title LIKE :name", {"name": f"%{name}%"})
+    query_segura = "SELECT * FROM events WHERE title LIKE :name (Parametrizado)"
+
+    # Filtro simulado no dicionário em memória ignorando case
+    resultados = [
+        event for event in events_db.values()
+        if name.lower() in event.title.lower()
+    ]
+
+    return {
+        "mensagem": "Busca processada de forma segura.",
+        "query_estrutural": query_segura,
+        "resultados_encontrados": len(resultados),
+        "data": resultados
+    }
 
 # --- ROTAS NORMAIS AQUI (retrieve_all_events, retrieve_event) ---
 @event_router.get("/", response_model=List[Event])

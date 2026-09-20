@@ -165,3 +165,28 @@ Authorization: Bearer {{token_m2m}}
   "tags": ["hack", "m2m"],
   "location": "Online"
 }
+
+### ==========================================================
+### Testes TP3 - Exercício 1 (Prevenção contra SQL Injection)
+### ==========================================================
+
+### 1. Busca Vulnerável (Comportamento Normal)
+GET http://127.0.0.1:8000/events/search-vulnerable?name=FastAPI
+Accept: application/json
+
+### 2. Busca Vulnerável (Demonstração do SQL Injection / Manipulação da Query)
+# O atacante envia uma aspa simples seguida de manipulação lógica (' OR '1'='1)
+# O resultado mostrará a query quebrada e manipulada: SELECT * FROM events WHERE name = 'FastAPI' OR '1'='1'
+GET http://127.0.0.1:8000/events/search-vulnerable?name=FastAPI'%20OR%20'1'='1
+Accept: application/json
+
+### 3. Busca Segura (Comportamento Normal)
+# Passa pela validação Regex pois contém apenas caracteres alfanuméricos
+GET http://127.0.0.1:8000/events/search?name=FastAPI
+Accept: application/json
+
+### 4. Busca Segura (Bloqueio do Payload Malicioso - Defesa em Profundidade)
+# O Regex da Allow-List identificará as aspas (') e o sinal de igual (=) como inválidos.
+# Deve retornar erro HTTP 400 Bad Request antes que a requisição processe a query.
+GET http://127.0.0.1:8000/events/search?name=FastAPI'%20OR%20'1'='1
+Accept: application/json
