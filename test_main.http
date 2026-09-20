@@ -190,3 +190,24 @@ Accept: application/json
 # Deve retornar erro HTTP 400 Bad Request antes que a requisição processe a query.
 GET http://127.0.0.1:8000/events/search?name=FastAPI'%20OR%20'1'='1
 Accept: application/json
+
+### ==========================================================
+### Testes TP3 - Exercício 3 (Prevenção contra BOLA)
+### ==========================================================
+
+### 1. Login do Usuário B (Invasor) para obter o JWT
+# @name loginInvasorB
+POST http://127.0.0.1:8000/user/login
+Content-Type: application/x-www-form-urlencoded
+
+username=participante_c@empresa.com&password=senha_segura_c
+
+> {%
+   client.global.set("token_invasor_b", response.body.access_token);
+%}
+
+### 2. ATAQUE BOLA: Usuário B solicita a inscrição ID 1 (Pertencente ao Usuário A)
+# O sistema deve retornar HTTP 200 OK com os dados do Usuário A, comprovando a falha.
+GET http://127.0.0.1:8000/inscricoes/1
+Authorization: Bearer {{token_invasor_b}}
+Accept: application/json
