@@ -9,12 +9,13 @@ SECRET_KEY = "HI5HL3V3L$3CR3T_EVENTOS_API_SECRET_KEY"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-def create_access_token(user_id: str, role: str = "participante", mfa_verified: bool = False) -> str:
+def create_access_token(user_id: str, role: str = "participante", mfa_verified: bool = False, scope: str="") -> str:
     """Cria um token JWT assinado contendo expiração, role e status de MFA."""
     payload = {
         "sub": user_id,  # Identificador único do usuário (UUID sugerido)
         "role": role,  # Papel do usuário (ex: participante, organizador, admin)
-        "mfa_verified": mfa_verified,  # Indica se o usuário passou pela autenticação multifator
+        "mfa_verified": mfa_verified,  # Indica se o usuário passou pela autenticação multifator,
+        "scope": scope,
         "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
         "iat": datetime.utcnow()
     }

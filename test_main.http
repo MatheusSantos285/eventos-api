@@ -133,3 +133,35 @@ Content-Type: application/json
 ### 3. Teste de Rota Exclusiva de Admin (Com o Token obtido no passo 2)
 GET http://127.0.0.1:8000/admin/dashboard
 Authorization: Bearer {{token_admin}}
+
+### Teste de Segurança - TP2 - Ex8
+
+### 1. Login do Parceiro M2M (Solicita apenas o escopo de leitura em contrato)
+# @name loginM2M
+POST http://127.0.0.1:8000/user/login
+Content-Type: application/x-www-form-urlencoded
+
+username=parceiro_m2m@empresa.com&password=senha_m2m&scope=events:write
+
+> {%
+    client.global.set("token_m2m", response.body.access_token);
+%}
+
+### 2. CENÁRIO DE SUCESSO: Parceiro M2M consome a rota autorizada (200 OK)
+GET http://127.0.0.1:8000/events/export/m2m
+Authorization: Bearer {{token_m2m}}
+
+### 3. CENÁRIO DE FALHA (DEFESA M2M): Parceiro M2M tenta injetar evento sem escopo de escrita (403 Forbidden)
+POST http://127.0.0.1:8000/events/new
+Content-Type: application/json
+Authorization: Bearer {{token_m2m}}
+
+{
+  "id": 99,
+  "title": "Evento Fake - Injeção M2M",
+  "date": "2026-12-31",
+  "image": "https://example.com/hacked.png",
+  "description": "Tentativa de ultrapassar o escopo contratual",
+  "tags": ["hack", "m2m"],
+  "location": "Online"
+}

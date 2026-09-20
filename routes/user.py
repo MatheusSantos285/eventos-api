@@ -34,8 +34,11 @@ async def sign_user_in(user: OAuth2PasswordRequestForm = Depends()) -> dict:
             "username": user_exist["email"]
         }
 
+    # Transforma a lista de escopos ['events:read'] em uma string 'events:read'
+    scopes_string = " ".join(user.scopes)
+
     # Cria o JWT utilizando apenas o ID do usuário ("sub"), conforme exigido pela sua função jwt_handler.py
-    access_token = create_access_token(user_id = user_exist["id"], role = user_exist["role"])
+    access_token = create_access_token(user_id = user_exist["id"], role = user_exist["role"], scope = scopes_string)
 
     return {
         "access_token": access_token,

@@ -22,5 +22,12 @@ users_db = {
         "password": HashPassword.hash_password("senha_segura_c"),
         "role": "participante",
         "mfa_secret": None
+    },
+    "parceiro_m2m@empresa.com": {
+        "id": "33333333-3333-3333-3333-333333333333",
+        "email": "parceiro_m2m@empresa.com",
+        "password": HashPassword.hash_password("senha_m2m"),
+        "role": "parceiro_m2m",
+        "mfa_secret": None
     }
 }
