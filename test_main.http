@@ -208,6 +208,65 @@ username=participante_c@empresa.com&password=senha_segura_c
 
 ### 2. ATAQUE BOLA: Usuário B solicita a inscrição ID 1 (Pertencente ao Usuário A)
 # O sistema deve retornar HTTP 200 OK com os dados do Usuário A, comprovando a falha.
+GET http://127.0.0.1:8000/inscricoes/vulneravel/1
+Authorization: Bearer {{token_invasor_b}}
+Accept: application/json
+
+### ==========================================================
+### Testes TP3 - Exercício 4 (Prevenção contra BOLA)
+### ==========================================================
+
+### 1. Login do Usuário A (Dono da inscrição ID 1)
+# @name loginDonoA
+POST http://127.0.0.1:8000/user/login
+Content-Type: application/x-www-form-urlencoded
+
+username=organizador_a@empresa.com&password=senha_segura_a
+
+> {%
+   client.global.set("token_dono_a", response.body.access_token);
+%}
+
+### 2. Login do Usuário B (Invasor)
+# @name loginInvasorB
+POST http://127.0.0.1:8000/user/login
+Content-Type: application/x-www-form-urlencoded
+
+username=participante_c@empresa.com&password=senha_segura_c
+
+> {%
+   client.global.set("token_invasor_b", response.body.access_token);
+%}
+
+### ==========================================================
+### Teste 1: Defesa contra BOLA (IDOR)
+### ==========================================================
+
+### CENÁRIO DE SUCESSO: Usuário A acessa a própria inscrição (Retorna 200 OK)
+GET http://127.0.0.1:8000/inscricoes/1
+Authorization: Bearer {{token_dono_a}}
+Accept: application/json
+
+### CENÁRIO DE BLOQUEIO: Usuário B tenta acessar a inscrição do Usuário A
+# Defesa: O sistema intercepta na injeção de dependência e retorna 404 Not Found (evitando vazamento)
 GET http://127.0.0.1:8000/inscricoes/1
 Authorization: Bearer {{token_invasor_b}}
 Accept: application/json
+
+
+### ==========================================================
+### Teste 2: Defesa contra BOPLA (Mass Assignment)
+### ==========================================================
+
+### CENÁRIO DE BLOQUEIO: Tentativa de injetar campos extras não documentados
+# Defesa: O Pydantic rejeita a entrada e retorna HTTP 422 Unprocessable Entity
+POST http://127.0.0.1:8000/inscricoes/
+Content-Type: application/json
+Authorization: Bearer {{token_dono_a}}
+
+{
+  "evento": "Python Brasil 2026",
+  "ingresso": "VIP",
+  "campo_hack": "malicioso",
+  "is_admin": true
+}
