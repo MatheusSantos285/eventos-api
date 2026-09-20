@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from fastapi.templating import Jinja2Templates
 
 from auth.jwt_handler import verify_access_token
-from models.events import Event, EventPublicResponse, EventInternal, EventUpdateSchema
+from models.events import Event, EventPublicResponse, EventInternal, EventUpdateSchema, CommentSchema
 from auth.authenticate import get_current_user
 from database.events import events_db
 
@@ -210,3 +210,16 @@ async def render_event_detail_html(request: Request, id: int):
         name="event_detail.html",
         context={"event": event}
     )
+
+# Rota para injetar o comentário (Stored XSS)
+@event_router.post("/{id}/comments")
+async def add_comment(id: int, payload: CommentSchema):
+    event = events_db.get(id)
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Evento não encontrado"
+        )
+    # Persiste o comentário malicioso em memória (Stored)
+    event.comments.append(payload.text)
+    return {"message": "Comentário registrado com sucesso"}

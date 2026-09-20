@@ -10,6 +10,7 @@ class Event(BaseModel):
     description: str
     tags: List[str]
     location: str
+    comments: Optional[List[str]] = []
 
     class Config:
         json_schema_extra = {
@@ -18,7 +19,8 @@ class Event(BaseModel):
                 "image": "https://linktomyimage.com/image.png",
                 "description": "We will be discussing the contents of the FastAPI book in this event.Ensure to come with your own copy to win gifts!",
                 "tags": ["python", "fastapi", "book", "launch"],
-                "location": "Google Meet"
+                "location": "Google Meet",
+                "comments": []
             }
         }
 
@@ -40,3 +42,6 @@ class EventUpdateSchema(BaseModel):
     description: Optional[str] = None
     tags: Optional[List[str]] = None
     location: Optional[str] = None
+
+class CommentSchema(BaseModel):
+    text: str

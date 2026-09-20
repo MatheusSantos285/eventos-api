@@ -1,20 +1,30 @@
 {% extends "base.html" %}
-
 {% block title %}Detalhes do Evento{% endblock %}
-
 {% block content %}
     <h1>{{ event.title }}</h1>
-    
+
     <p><strong>ID:</strong> {{ event.id }}</p>
     <p><strong>Data:</strong> {{ event.date }}</p>
     <p><strong>Local:</strong> {{ event.location }}</p>
     <p><strong>Organizador:</strong> {{ event.organizer }}</p>
     <p><strong>Descrição:</strong> {{ event.description }}</p>
-    
+
     <h3>Tags:</h3>
     <ul>
         {% for tag in event.tags %}
             <li>{{ tag }}</li>
+        {% endfor %}
+    </ul>
+
+    <hr>
+
+    <h3>Comentários dos Participantes:</h3>
+    <ul>
+        {% for comment in event.comments %}
+            <!-- VULNERABILIDADE: O filtro | safe renderiza tags HTML/JS diretamente no DOM -->
+            <li>{{ comment | safe }}</li>
+        {% else %}
+            <p>Nenhum comentário cadastrado.</p>
         {% endfor %}
     </ul>
 

