@@ -7,12 +7,18 @@ from routes.admin import admin_router
 from routes.events import event_router
 from routes.inscricoes import inscricao_router
 from routes.user import user_router
+from database.connection import init_db
 
 app = FastAPI(
     title="Eventos API",
     description="API para gerenciamento de eventos",
     version="2.0.0"
 )
+
+@app.on_event("startup")
+def on_startup():
+    """Evento de inicialização do aplicativo FastAPI."""
+    init_db()  # Inicializa o banco de dados e cria as tabelas
 
 # =========================================================================
 # CONFIGURAÇÃO DE RATE LIMITING (SLOWAPI)

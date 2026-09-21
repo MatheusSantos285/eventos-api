@@ -54,6 +54,12 @@ Accept: application/json
 POST http://127.0.0.1:8000/events/new-vulneravel
 Accept: application/json
 
+### ==========================================================
+### 0. PREPARAÇÃO DO BANCO DE DADOS (SEED)
+### ==========================================================
+POST http://127.0.0.1:8000/user/seed
+Accept: application/json
+
 # Testes de Segurança BOLA - TP2
 
 ### 1. Login do Usuário A (Dono) e captura do Token

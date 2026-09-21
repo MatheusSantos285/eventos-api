@@ -1,40 +1,32 @@
 from typing import List, Optional
 from pydantic import BaseModel
+from sqlmodel import SQLModel, Field, Column, JSON
 
-class Event(BaseModel):
-    id: int
+class EventBase(SQLModel):
     title: str
     date: str
-    organizer: str
     image: str
     description: str
-    tags: List[str]
     location: str
-    comments: Optional[List[str]] = []
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "title": "FastAPI Book Launch",
-                "image": "https://linktomyimage.com/image.png",
-                "description": "We will be discussing the contents of the FastAPI book in this event.Ensure to come with your own copy to win gifts!",
-                "tags": ["python", "fastapi", "book", "launch"],
-                "location": "Google Meet",
-                "comments": []
-            }
-        }
+# 1. Tabela de Banco de Dados (Herda de EventBase e SQLModel)
+class Event(EventBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    organizer: str = Field(index=True)
+    # Salvando listas como JSON no SQLite
+    tags: List[str] = Field(default=[], sa_column=Column(JSON))
+    comments: List[str] = Field(default=[], sa_column=Column(JSON))
 
-# 1. Representação do que seria salvo no Banco de Dados (Contém dados sensíveis)
-class EventInternal(BaseModel):
-    title: str
-    description: str
-    organizer_id: int
-    audit_token: str
+# 2. Esquemas de Requisição/Resposta Pydantic
+class EventCreate(EventBase):
+    tags: List[str] = []
 
-# 2. O que o cliente pode ver (Exclui dados sensíveis)
 class EventPublicResponse(BaseModel):
+    id: int
     title: str
     description: str
+    date: str
+    location: str
 
 class EventUpdateSchema(BaseModel):
     title: Optional[str] = None
