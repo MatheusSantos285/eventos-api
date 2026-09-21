@@ -361,3 +361,32 @@ Accept: text/html
 
 # RESULTADO ESPERADO NO CORPO DA RESPOSTA:
 # <li>&lt;script&gt;alert(&#39;XSS-Stored-Exploit&#39;)&lt;/script&gt;</li>
+
+### ==========================================================
+### Testes TP3 - Exercício 6 (Segurança HTTP e CORS)
+### ==========================================================
+
+### Teste 1 (Origem Autorizada)
+# Requisição enviando uma origem permitida na Allowlist.
+# A resposta DEVE retornar HTTP 200 OK com o cabeçalho Access-Control-Allow-Origin presente
+# e todos os 3 cabeçalhos de segurança (HSTS, X-Frame-Options, X-Content-Type-Options).
+GET http://127.0.0.1:8000/events/
+Origin: http://localhost:3000
+Accept: application/json
+
+
+### Teste 2 (Origem NÃO Autorizada / Bloqueio CORS)
+# Requisição simulando um site malicioso tentando acessar a API via navegador.
+# A resposta NÃO deve conter o cabeçalho 'Access-Control-Allow-Origin',
+# comprovando que o mecanismo de CORS do navegador bloqueará a requisição.
+GET http://127.0.0.1:8000/events/
+Origin: http://site-malicioso-hacker.com
+Accept: application/json
+
+
+### Teste 3 (Validação dos Cabeçalhos de Segurança HTTP)
+# Rota simples sem a necessidade do cabeçalho Origin.
+# Inspecione os Headers da resposta para garantir que o Middleware global
+# injetou Strict-Transport-Security, X-Frame-Options e X-Content-Type-Options.
+GET http://127.0.0.1:8000/events/
+Accept: application/json
