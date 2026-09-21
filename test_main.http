@@ -390,3 +390,27 @@ Accept: application/json
 # injetou Strict-Transport-Security, X-Frame-Options e X-Content-Type-Options.
 GET http://127.0.0.1:8000/events/
 Accept: application/json
+
+### ==========================================================
+### Testes TP3 - Exercício 7 (Prevenção de Brute Force via Rate Limiting)
+### ==========================================================
+
+### 1ª a 5ª Requisições: Consumo da cota do IP (Aperte 5 vezes rapidamente)
+### Deve retornar HTTP 200 OK ou HTTP 401 Unauthorized (dependendo da senha).
+POST http://127.0.0.1:8000/user/login
+Content-Type: application/x-www-form-urlencoded
+
+username=admin@empresa.com&password=admin_pass123
+
+### 6ª Requisição no mesmo minuto: Estouro de Limite (Defesa em atuação)
+### O servidor DEVE bloquear a execução e retornar HTTP 429 Too Many Requests.
+POST http://127.0.0.1:8000/user/login
+Content-Type: application/x-www-form-urlencoded
+
+username=admin@empresa.com&password=admin_pass123
+
+### Requisição na rota de Eventos (Padrão Permissivo - 60/minuto)
+### Executada logo após o bloqueio no login, comprova que as consultas
+### continuam funcionando sem afetar a navegação global. Retorna HTTP 200 OK.
+GET http://127.0.0.1:8000/events/
+Accept: application/json

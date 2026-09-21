@@ -1,4 +1,3 @@
-import uuid
 import re
 from typing import List
 from fastapi import APIRouter, Body, HTTPException, status, Request, Depends, Security
@@ -9,6 +8,7 @@ from auth.jwt_handler import verify_access_token
 from models.events import Event, EventPublicResponse, EventInternal, EventUpdateSchema, CommentSchema
 from auth.authenticate import get_current_user
 from database.events import events_db
+from config.rate_limiter import limiter
 
 event_router = APIRouter(
     prefix="/events",
@@ -98,7 +98,8 @@ async def search_events_secure(name: str = Depends(validate_search_query)):
 
 # --- ROTAS NORMAIS AQUI (retrieve_all_events, retrieve_event) ---
 @event_router.get("/", response_model=List[Event])
-async def retrieve_all_events() -> List[Event]:
+@limiter.limit("60/minute")
+async def retrieve_all_events(request: Request) -> List[Event]:
     return list(events_db.values())
 
 @event_router.get("/{id}", response_model=Event)

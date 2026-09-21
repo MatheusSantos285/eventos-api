@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from auth.hash_password import HashPassword
 from auth.jwt_handler import create_access_token
 from database.users import users_db
+from config.rate_limiter import limiter
 
 user_router = APIRouter(
     prefix="/user",
@@ -10,7 +11,8 @@ user_router = APIRouter(
 )
 
 @user_router.post("/login")
-async def sign_user_in(user: OAuth2PasswordRequestForm = Depends()) -> dict:
+@limiter.limit("5/minute")
+async def sign_user_in(request: Request, user: OAuth2PasswordRequestForm = Depends()) -> dict:
     # A rota /login verifica a existência do usuário e valida se as senhas coincidem para autorizar o acesso ou levantar uma exceção.
     user_exist = users_db.get(user.username)
 

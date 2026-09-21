@@ -1,5 +1,8 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import (CORSMiddleware)
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from config.rate_limiter import limiter  # Importação da instância do limiter
 from routes.admin import admin_router
 from routes.events import event_router
 from routes.inscricoes import inscricao_router
@@ -12,9 +15,14 @@ app = FastAPI(
 )
 
 # =========================================================================
+# CONFIGURAÇÃO DE RATE LIMITING (SLOWAPI)
+# =========================================================================
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# =========================================================================
 # 1. CONFIGURAÇÃO DE CORS (Allowlist Explícita)
 # =========================================================================
-# Define explicitamente as origens permitidas (sem wildcard)
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -35,11 +43,8 @@ app.add_middleware(
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
-    # Previne ataques de downgrade (força HTTPS)
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    # Previne Clickjacking bloqueando iframes não autorizados
     response.headers["X-Frame-Options"] = "DENY"
-    # Previne MIME-Sniffing
     response.headers["X-Content-Type-Options"] = "nosniff"
     return response
 
